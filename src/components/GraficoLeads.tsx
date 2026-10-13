@@ -243,3 +243,4 @@ export function GraficoLeads({ leads }: GraficoLeadsProps) {
     </div>
   );
 }
+

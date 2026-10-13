@@ -19,7 +19,11 @@ import {
   Flame,
   Sun,
   Snowflake,
-  SlidersHorizontal
+  SlidersHorizontal,
+  RotateCcw,
+  History,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { GraficoLeads } from "./GraficoLeads";
 
@@ -35,6 +39,8 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
   const [leads, setLeads] = useState<LeadComAnalises[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [reanalisandoId, setReanalisandoId] = useState<string | null>(null);
+  const [historicoAbertoId, setHistoricoAbertoId] = useState<string | null>(null);
 
   // Estados dos Filtros
   const [filtroClassificacao, setFiltroClassificacao] = useState<string>("todos");
@@ -65,6 +71,26 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
     navigator.clipboard.writeText(texto);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  async function handleReanalisar(leadId: string) {
+    setReanalisandoId(leadId);
+    try {
+      const response = await fetch(`/api/leads/${leadId}/reanalisar`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Falha ao reanalisar lead");
+      }
+
+      await fetchLeads();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erro ao reanalisar lead");
+    } finally {
+      setReanalisandoId(null);
+    }
   }
 
   // Atalhos de filtro por data
@@ -470,15 +496,27 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
                     </div>
                   </div>
 
-                  {ultimaAnalise && (
-                    <div className="flex items-center gap-2 self-start sm:self-auto bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                      <span className="text-xs uppercase text-slate-500 font-semibold">Score:</span>
-                      <span className="text-xl font-extrabold text-slate-900">
-                        {ultimaAnalise.score}
-                        <span className="text-xs font-normal text-slate-400">/100</span>
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                    <button
+                      onClick={() => handleReanalisar(lead.id)}
+                      disabled={reanalisandoId === lead.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 border border-indigo-200 rounded-xl transition shadow-sm"
+                      title="Reavaliar este lead com a Gemini API e registrar nova análise no Neon"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 text-indigo-600 ${reanalisandoId === lead.id ? "animate-spin" : ""}`} />
+                      <span>{reanalisandoId === lead.id ? "Reanalisando..." : "Reanalisar Lead"}</span>
+                    </button>
+
+                    {ultimaAnalise && (
+                      <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                        <span className="text-xs uppercase text-slate-500 font-semibold">Score:</span>
+                        <span className="text-xl font-extrabold text-slate-900">
+                          {ultimaAnalise.score}
+                          <span className="text-xs font-normal text-slate-400">/100</span>
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Mensagem Original do Lead */}
@@ -536,6 +574,73 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
                         <p className="text-sm text-slate-800 leading-relaxed bg-white/80 p-3 rounded-lg border border-indigo-100 whitespace-pre-wrap">
                           {ultimaAnalise.resposta_sugerida}
                         </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Histórico de Análises Anteriores (se houver mais de 1) */}
+                {lead.analises && lead.analises.length > 1 && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <button
+                      onClick={() =>
+                        setHistoricoAbertoId(
+                          historicoAbertoId === lead.id ? null : lead.id
+                        )
+                      }
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition"
+                    >
+                      <History className="w-3.5 h-3.5 text-slate-400" />
+                      <span>
+                        Histórico de avaliações ({lead.analises.length} no total)
+                      </span>
+                      {historicoAbertoId === lead.id ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                      )}
+                    </button>
+
+                    {historicoAbertoId === lead.id && (
+                      <div className="mt-3 space-y-3 pl-3 border-l-2 border-indigo-200">
+                        <p className="text-[11px] text-slate-400 font-medium">
+                          Avaliações anteriores preservadas no Neon PostgreSQL:
+                        </p>
+                        {lead.analises.slice(1).map((analiseAnterior, idx) => (
+                          <div
+                            key={analiseAnterior.id}
+                            className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-slate-700">
+                                  #{lead.analises.length - 1 - idx}
+                                </span>
+                                {getClassificacaoBadge(analiseAnterior.classificacao)}
+                                <span className="font-bold text-slate-800">
+                                  Score: {analiseAnterior.score}/100
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-slate-400">
+                                {analiseAnterior.created_at
+                                  ? new Date(analiseAnterior.created_at).toLocaleString("pt-BR", {
+                                      dateStyle: "short",
+                                      timeStyle: "short",
+                                    })
+                                  : ""}
+                              </span>
+                            </div>
+                            <p className="text-slate-600">
+                              <span className="font-semibold text-slate-700">Justificativa: </span>
+                              {analiseAnterior.justificativa}
+                            </p>
+                            {analiseAnterior.modelo && (
+                              <div className="text-[10px] font-mono text-slate-400">
+                                Modelo: {analiseAnterior.modelo}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>

@@ -30,6 +30,25 @@ Desenvolvido com o auxílio do agente inteligente **Google Antigravity** no Visu
 
 ---
 
+## 🌟 Funcionalidades Avançadas (Fase 2 - Em Andamento)
+
+1. **🔐 Login Simples para o Painel:**
+   - Proteção de acesso ao painel de leads com autenticação via cookies `HttpOnly` (`admin` / `leadscore2026`).
+   - Sessão segura com expiração de 24h e suporte a encerramento de sessão (Logout).
+2. **🎯 Filtros Avançados & Busca Dinâmica:**
+   - Filtro por temperatura (**Todos**, **Quentes**, **Mornos**, **Frios**).
+   - Intervalo de datas com seletores e atalhos de clique rápido (**Hoje**, **Últimos 7 dias**, **Últimos 30 dias**).
+   - Busca em tempo real por nome, e-mail, empresa ou segmento do lead.
+3. **📊 Gráfico de Distribuição por Classificação:**
+   - Gráfico de Rosca (Donut SVG) interativo e nativo com percentual de cada categoria.
+   - Barra de proporção contínua e cálculo dinâmico da média geral de pontuação (Score Médio).
+4. **🔄 Reanálise de Lead com Histórico Completo:**
+   - Botão para reavaliar qualquer lead sob demanda utilizando a API do Google Gemini (`gemini-3.8-flash`).
+   - Preservação integral do histórico: novas análises são salvas na tabela `analises` associadas ao `lead_id`.
+   - Acordeom expansível exibindo avaliações anteriores com data, modelo, score e justificativa.
+
+---
+
 ## 🛠️ Stack Tecnológica
 
 - **Framework Web:** [Next.js](https://nextjs.org/) (App Router, Server Components e React 19)
