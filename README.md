@@ -46,6 +46,10 @@ Desenvolvido com o auxílio do agente inteligente **Google Antigravity** no Visu
    - Botão para reavaliar qualquer lead sob demanda utilizando a API do Google Gemini (`gemini-3.8-flash`).
    - Preservação integral do histórico: novas análises são salvas na tabela `analises` associadas ao `lead_id`.
    - Acordeom expansível exibindo avaliações anteriores com data, modelo, score e justificativa.
+5. **⚙️ CI no GitHub Actions com Lint e Build:**
+   - Pipeline automatizada de Integração Contínua (`.github/workflows/ci.yml`) configurada no repositório.
+   - Disparo automático em todos os `push` e `pull_request` direcionados à branch `main`.
+   - Execução isolada em container Ubuntu com Node.js 20, validação estrita do ESLint (`npm run lint`) e compilação de produção (`npm run build`).
 
 ---
 
