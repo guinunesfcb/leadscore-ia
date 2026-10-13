@@ -21,6 +21,7 @@ import {
   Snowflake,
   SlidersHorizontal
 } from "lucide-react";
+import { GraficoLeads } from "./GraficoLeads";
 
 type LeadComAnalises = Lead & {
   analises: Analise[];
@@ -207,6 +208,9 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
           )}
         </div>
       </div>
+
+      {/* Gráfico de Distribuição por Classificação */}
+      <GraficoLeads leads={leads} />
 
       {/* Cartões Rápidos de Resumo */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
