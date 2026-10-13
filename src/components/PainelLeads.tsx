@@ -11,14 +11,19 @@ import {
   Check, 
   MessageSquareQuote,
   Sparkles,
-  Inbox
+  Inbox,
+  LogOut
 } from "lucide-react";
 
 type LeadComAnalises = Lead & {
   analises: Analise[];
 };
 
-export function PainelLeads() {
+interface PainelLeadsProps {
+  onLogout?: () => void;
+}
+
+export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
   const [leads, setLeads] = useState<LeadComAnalises[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -79,14 +84,26 @@ export function PainelLeads() {
             Gerenciamento centralizado de contatos gravados no Neon PostgreSQL com avaliação por IA.
           </p>
         </div>
-        <button
-          onClick={fetchLeads}
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-xl transition"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          <span>Atualizar</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchLeads}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-xl transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            <span>Atualizar</span>
+          </button>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-600 hover:text-red-600 bg-white hover:bg-red-50 border border-slate-200 rounded-xl transition shadow-sm"
+              title="Encerrar sessão"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sair</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && leads.length === 0 ? (

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { db } from "@/db";
 import { leads, analises } from "@/db/schema";
 import { leadFormSchema } from "@/lib/schemas";
@@ -8,6 +9,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const cookieStore = await cookies();
+    const session = cookieStore.get("leadscore_auth");
+
+    if (session?.value !== "authenticated_session") {
+      return NextResponse.json(
+        { error: "Acesso restrito. Faça login para visualizar os leads." },
+        { status: 401 }
+      );
+    }
+
     const todosLeads = await db.query.leads.findMany({
       orderBy: (leadsTable, { desc }) => [desc(leadsTable.created_at)],
       with: {
