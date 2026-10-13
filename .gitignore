@@ -1,2 +1,25 @@
+# Variaveis de ambiente
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Dependencias
 node_modules/
+
+# Next.js
+.next/
+
+# Vercel
+.vercel/
+
+# Neon
+.neon
+
+# Cobertura, logs e configuracoes locais
+coverage/
+*.log
+*.secret.json
+mcp_config.local.json
