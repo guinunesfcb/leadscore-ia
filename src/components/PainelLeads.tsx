@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { type Lead, type Analise } from "@/db/schema";
 import { 
   RefreshCw, 
@@ -12,7 +12,14 @@ import {
   MessageSquareQuote,
   Sparkles,
   Inbox,
-  LogOut
+  LogOut,
+  Filter,
+  Search,
+  X,
+  Flame,
+  Sun,
+  Snowflake,
+  SlidersHorizontal
 } from "lucide-react";
 
 type LeadComAnalises = Lead & {
@@ -27,6 +34,12 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
   const [leads, setLeads] = useState<LeadComAnalises[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Estados dos Filtros
+  const [filtroClassificacao, setFiltroClassificacao] = useState<string>("todos");
+  const [dataInicio, setDataInicio] = useState<string>("");
+  const [dataFim, setDataFim] = useState<string>("");
+  const [buscaTexto, setBuscaTexto] = useState<string>("");
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -53,30 +66,119 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
     setTimeout(() => setCopiedId(null), 2000);
   }
 
+  // Atalhos de filtro por data
+  function aplicarPresetData(dias: number) {
+    const hoje = new Date();
+    const dataInicial = new Date();
+    dataInicial.setDate(hoje.getDate() - dias);
+
+    const formatar = (d: Date) => d.toISOString().split("T")[0];
+
+    setDataFim(formatar(hoje));
+    setDataInicio(formatar(dataInicial));
+  }
+
+  function limparFiltros() {
+    setFiltroClassificacao("todos");
+    setDataInicio("");
+    setDataFim("");
+    setBuscaTexto("");
+  }
+
+  const temFiltroAtivo = 
+    filtroClassificacao !== "todos" || 
+    dataInicio !== "" || 
+    dataFim !== "" || 
+    buscaTexto.trim() !== "";
+
+  // Contagens gerais
+  const contagens = useMemo(() => {
+    let quentes = 0;
+    let mornos = 0;
+    let frios = 0;
+
+    for (const lead of leads) {
+      const classe = lead.analises?.[0]?.classificacao;
+      if (classe === "quente") quentes++;
+      else if (classe === "morno") mornos++;
+      else if (classe === "frio") frios++;
+    }
+
+    return { total: leads.length, quentes, mornos, frios };
+  }, [leads]);
+
+  // Filtragem dos leads
+  const leadsFiltrados = useMemo(() => {
+    return leads.filter((lead) => {
+      const ultimaAnalise = lead.analises && lead.analises.length > 0 ? lead.analises[0] : null;
+
+      // 1. Filtro de Classificação
+      if (filtroClassificacao !== "todos") {
+        if (!ultimaAnalise || ultimaAnalise.classificacao !== filtroClassificacao) {
+          return false;
+        }
+      }
+
+      // 2. Filtro de Texto (Nome, E-mail, Empresa, Segmento)
+      if (buscaTexto.trim()) {
+        const termo = buscaTexto.toLowerCase();
+        const nomeMatch = lead.nome.toLowerCase().includes(termo);
+        const emailMatch = lead.email.toLowerCase().includes(termo);
+        const empresaMatch = lead.empresa ? lead.empresa.toLowerCase().includes(termo) : false;
+        const segmentoMatch = lead.segmento ? lead.segmento.toLowerCase().includes(termo) : false;
+
+        if (!nomeMatch && !emailMatch && !empresaMatch && !segmentoMatch) {
+          return false;
+        }
+      }
+
+      // 3. Filtro por Data
+      if (lead.created_at) {
+        const leadDate = new Date(lead.created_at);
+
+        if (dataInicio) {
+          const inicio = new Date(`${dataInicio}T00:00:00`);
+          if (leadDate < inicio) return false;
+        }
+
+        if (dataFim) {
+          const fim = new Date(`${dataFim}T23:59:59.999`);
+          if (leadDate > fim) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [leads, filtroClassificacao, buscaTexto, dataInicio, dataFim]);
+
   function getClassificacaoBadge(classificacao: string | null) {
     if (classificacao === "quente") {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-          🔥 Quente
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+          <Flame className="w-3 h-3 text-red-600" />
+          <span>Quente</span>
         </span>
       );
     }
     if (classificacao === "morno") {
       return (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-          ☀️ Morno
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <Sun className="w-3 h-3 text-amber-600" />
+          <span>Morno</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-        ❄️ Frio
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+        <Snowflake className="w-3 h-3 text-blue-600" />
+        <span>Frio</span>
       </span>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Barra de Título e Ações */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div>
           <h2 className="text-xl font-bold text-slate-900">Painel de Leads & Priorização Comercial</h2>
@@ -106,6 +208,195 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
         </div>
       </div>
 
+      {/* Cartões Rápidos de Resumo */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <button
+          onClick={() => setFiltroClassificacao("todos")}
+          className={`p-4 rounded-xl border text-left transition ${
+            filtroClassificacao === "todos"
+              ? "bg-indigo-50 border-indigo-200 ring-2 ring-indigo-500/20"
+              : "bg-white border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block">
+            Todos os Leads
+          </span>
+          <span className="text-2xl font-bold text-slate-900 mt-1 block">
+            {contagens.total}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setFiltroClassificacao("quente")}
+          className={`p-4 rounded-xl border text-left transition ${
+            filtroClassificacao === "quente"
+              ? "bg-red-50 border-red-200 ring-2 ring-red-500/20"
+              : "bg-white border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span className="text-xs font-semibold text-red-600 uppercase tracking-wider flex items-center gap-1">
+            <Flame className="w-3.5 h-3.5" />
+            Quentes
+          </span>
+          <span className="text-2xl font-bold text-red-900 mt-1 block">
+            {contagens.quentes}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setFiltroClassificacao("morno")}
+          className={`p-4 rounded-xl border text-left transition ${
+            filtroClassificacao === "morno"
+              ? "bg-amber-50 border-amber-200 ring-2 ring-amber-500/20"
+              : "bg-white border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+            <Sun className="w-3.5 h-3.5" />
+            Mornos
+          </span>
+          <span className="text-2xl font-bold text-amber-900 mt-1 block">
+            {contagens.mornos}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setFiltroClassificacao("frio")}
+          className={`p-4 rounded-xl border text-left transition ${
+            filtroClassificacao === "frio"
+              ? "bg-blue-50 border-blue-200 ring-2 ring-blue-500/20"
+              : "bg-white border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+            <Snowflake className="w-3.5 h-3.5" />
+            Frios
+          </span>
+          <span className="text-2xl font-bold text-blue-900 mt-1 block">
+            {contagens.frios}
+          </span>
+        </button>
+      </div>
+
+      {/* Seção de Filtros por Classificação, Data e Busca */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+            <SlidersHorizontal className="w-4 h-4 text-indigo-600" />
+            <span>Filtros de Consulta</span>
+          </div>
+
+          {temFiltroAtivo && (
+            <button
+              onClick={limparFiltros}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Limpar filtros</span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+          {/* Busca Textual */}
+          <div className="md:col-span-5 relative">
+            <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+              Buscar Lead
+            </label>
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={buscaTexto}
+                onChange={(e) => setBuscaTexto(e.target.value)}
+                placeholder="Filtrar por nome, empresa ou e-mail..."
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+              />
+            </div>
+          </div>
+
+          {/* Filtro de Classificação */}
+          <div className="md:col-span-3">
+            <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+              Classificação
+            </label>
+            <select
+              value={filtroClassificacao}
+              onChange={(e) => setFiltroClassificacao(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition bg-white"
+            >
+              <option value="todos">Todas as temperaturas</option>
+              <option value="quente">🔥 Quentes (71 a 100)</option>
+              <option value="morno">☀️ Mornos (41 a 70)</option>
+              <option value="frio">❄️ Frios (0 a 40)</option>
+            </select>
+          </div>
+
+          {/* Data De / Até */}
+          <div className="md:col-span-4">
+            <label className="block text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+              Período de Cadastro
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={dataInicio}
+                onChange={(e) => setDataInicio(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                title="Data inicial"
+              />
+              <input
+                type="date"
+                value={dataFim}
+                onChange={(e) => setDataFim(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                title="Data final"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Atalhos Rápidos de Data */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-slate-500">
+          <span className="font-semibold text-slate-600 mr-1 flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" /> Atalhos:
+          </span>
+          <button
+            onClick={() => aplicarPresetData(0)}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition"
+          >
+            Hoje
+          </button>
+          <button
+            onClick={() => aplicarPresetData(7)}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition"
+          >
+            Últimos 7 dias
+          </button>
+          <button
+            onClick={() => aplicarPresetData(30)}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition"
+          >
+            Últimos 30 dias
+          </button>
+        </div>
+
+        {/* Barra de Status da Filtragem */}
+        <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
+          <span>
+            Exibindo <strong className="text-slate-800">{leadsFiltrados.length}</strong> de{" "}
+            <strong className="text-slate-800">{leads.length}</strong> leads cadastrados
+          </span>
+
+          {temFiltroAtivo && (
+            <span className="text-indigo-600 font-medium">
+              Filtros ativos aplicados
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Conteúdo da Lista de Leads */}
       {loading && leads.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-600 mb-3" />
@@ -119,9 +410,25 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
             Utilize o formulário de captação para registrar o primeiro contato comercial e gerar a análise automática com IA.
           </p>
         </div>
+      ) : leadsFiltrados.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 space-y-3">
+          <Filter className="w-10 h-10 mx-auto text-slate-300" />
+          <h3 className="text-base font-semibold text-slate-800">
+            Nenhum lead corresponde aos filtros selecionados
+          </h3>
+          <p className="text-sm text-slate-500 max-w-sm mx-auto">
+            Tente ajustar os parâmetros de classificação, o período de datas ou o termo de busca.
+          </p>
+          <button
+            onClick={limparFiltros}
+            className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs rounded-xl transition"
+          >
+            Limpar todos os filtros
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {leads.map((lead) => {
+          {leadsFiltrados.map((lead) => {
             const ultimaAnalise = lead.analises && lead.analises.length > 0 ? lead.analises[0] : null;
 
             return (
@@ -237,4 +544,3 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
     </div>
   );
 }
-

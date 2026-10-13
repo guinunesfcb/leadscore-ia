@@ -7,3 +7,4 @@ export async function POST() {
 
   return NextResponse.json({ success: true, message: "Logout realizado com sucesso" });
 }
+

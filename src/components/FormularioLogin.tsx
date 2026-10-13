@@ -122,3 +122,4 @@ export function FormularioLogin({ onLoginSuccess }: FormularioLoginProps) {
     </div>
   );
 }
+
