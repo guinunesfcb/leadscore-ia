@@ -30,7 +30,7 @@ Desenvolvido com o auxílio do agente inteligente **Google Antigravity** no Visu
 
 ---
 
-## 🌟 Funcionalidades Avançadas (Fase 2 - Em Andamento)
+## 🌟 Funcionalidades Avançadas (Fase 2 - 100% Concluída)
 
 1. **🔐 Login Simples para o Painel:**
    - Proteção de acesso ao painel de leads com autenticação via cookies `HttpOnly` (`admin` / `leadscore2026`).
@@ -50,6 +50,10 @@ Desenvolvido com o auxílio do agente inteligente **Google Antigravity** no Visu
    - Pipeline automatizada de Integração Contínua (`.github/workflows/ci.yml`) configurada no repositório.
    - Disparo automático em todos os `push` e `pull_request` direcionados à branch `main`.
    - Execução isolada em container Ubuntu com Node.js 20, validação estrita do ESLint (`npm run lint`) e compilação de produção (`npm run build`).
+6. **📥 Exportação dos Leads em CSV:**
+   - Botão de exportação instantânea no painel com contagem dinâmica dos registros filtrados.
+   - Exportação compatível com Excel e Google Sheets via formatação RFC 4180 e codificação UTF-8 com BOM (`\uFEFF`).
+   - Rota de API dedicada `GET /api/leads/export` protegida por autenticação para download de relatórios.
 
 ---
 

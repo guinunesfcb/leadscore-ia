@@ -23,7 +23,8 @@ import {
   RotateCcw,
   History,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Download
 } from "lucide-react";
 import { GraficoLeads } from "./GraficoLeads";
 
@@ -178,6 +179,66 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
     });
   }, [leads, filtroClassificacao, buscaTexto, dataInicio, dataFim]);
 
+  function exportarCsv() {
+    if (leadsFiltrados.length === 0) return;
+
+    function escaparCsv(valor: unknown): string {
+      if (valor === null || valor === undefined) return '""';
+      const str = String(valor).replace(/"/g, '""');
+      return `"${str}"`;
+    }
+
+    const cabecalhos = [
+      "ID",
+      "Nome",
+      "Email",
+      "Empresa",
+      "Segmento",
+      "Origem",
+      "Data de Cadastro",
+      "Score",
+      "Classificação",
+      "Modelo de IA",
+      "Justificativa Comercial",
+      "Resposta Sugerida",
+      "Data da Análise",
+    ];
+
+    const linhas = [cabecalhos.map(escaparCsv).join(";")];
+
+    for (const lead of leadsFiltrados) {
+      const ultimaAnalise = lead.analises && lead.analises.length > 0 ? lead.analises[0] : null;
+      const linha = [
+        lead.id,
+        lead.nome,
+        lead.email,
+        lead.empresa || "",
+        lead.segmento || "",
+        lead.origem || "site",
+        lead.created_at ? new Date(lead.created_at).toLocaleString("pt-BR") : "",
+        ultimaAnalise ? ultimaAnalise.score : "",
+        ultimaAnalise ? ultimaAnalise.classificacao : "",
+        ultimaAnalise ? ultimaAnalise.modelo : "",
+        ultimaAnalise ? ultimaAnalise.justificativa : "",
+        ultimaAnalise ? ultimaAnalise.resposta_sugerida : "",
+        ultimaAnalise?.created_at ? new Date(ultimaAnalise.created_at).toLocaleString("pt-BR") : "",
+      ];
+      linhas.push(linha.map(escaparCsv).join(";"));
+    }
+
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + linhas.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `leads_leadscore_${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   function getClassificacaoBadge(classificacao: string | null) {
     if (classificacao === "quente") {
       return (
@@ -213,11 +274,20 @@ export function PainelLeads({ onLogout }: PainelLeadsProps = {}) {
             Gerenciamento centralizado de contatos gravados no Neon PostgreSQL com avaliação por IA.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={exportarCsv}
+            disabled={leadsFiltrados.length === 0}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50 border border-emerald-200 rounded-xl transition shadow-sm"
+            title="Exportar leads exibidos para planilha CSV formatada"
+          >
+            <Download className="w-4 h-4 text-emerald-600" />
+            <span>Exportar CSV ({leadsFiltrados.length})</span>
+          </button>
           <button
             onClick={fetchLeads}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-xl transition"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 rounded-xl transition"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             <span>Atualizar</span>
