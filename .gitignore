@@ -23,3 +23,5 @@ coverage/
 *.log
 *.secret.json
 mcp_config.local.json
+.vercel
+.env*
