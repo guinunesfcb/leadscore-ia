@@ -2,6 +2,9 @@
 
 Aplicação web para captação, classificação e priorização de leads comerciais de pequenas e médias empresas, integrando **Next.js (App Router)**, **Neon PostgreSQL**, **Drizzle ORM** e **Google Gemini API (gemini-3.8-flash)**.
 
+- **🌐 Deploy Público na Vercel:** [https://leadscore-ia-eight.vercel.app](https://leadscore-ia-eight.vercel.app)
+- **📦 Repositório GitHub:** [https://github.com/guinunesfcb/leadscore-ia](https://github.com/guinunesfcb/leadscore-ia)
+
 Desenvolvido com o auxílio do agente inteligente **Google Antigravity** no Visual Studio Code.
 
 ---
